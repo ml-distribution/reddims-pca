@@ -1,0 +1,10 @@
+Please download TNT and JAMA from:
+http://math.nist.gov/tnt/download.html
+
+After you donwload it, please modify the Makefile .
+
+How to run:
+
+cd your_path_to_pca.
+./make
+./pca test_data

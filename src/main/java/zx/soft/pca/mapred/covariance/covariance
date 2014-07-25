@@ -1,0 +1,38 @@
+#! /bin/bash
+
+HADOOP=$(which hadoop)
+MAVEN=$(which mvn)
+DEFAULT_HDFS_HOST="hdfs://localhost:54310"
+
+# help
+if [ $# -eq 5 ]
+then
+HDFS_HOST=${DEFAULT_HDFS_HOST}
+INPUT_PATH=$1
+OUTPUT_PATH=$2
+AVERAGE_VECTOR_PATH=$3
+VECTOR_COUNT=$4
+VECTOR_CARDINALITY=$5
+elif [ $# -eq 6 ]
+then
+HDFS_HOST=$1
+INPUT_PATH=$2
+OUTPUT_PATH=$3
+AVERAGE_VECTOR_PATH=$4
+VECTOR_COUNT=$5
+VECTOR_CARDINALITY=$6
+else
+	echo "Usage: $0 [{hdfs-host}] {input (on hdfs)} {output (on hdfs)} {mean vector path (on hdfs)} {vector-count} {vector-cardinality}"
+	echo "calculates covariace matrix from given IntegerWritable-VectorWritable Sequence File."
+	exit 1
+fi
+
+mvn exec:java -Dexec.mainClass="com.github.dongjinleekr.hadoop.covariance.CovarianceJob" -Dexec.args="\
+-fs ${HDFS_HOST} \
+-D mapred.cache.archives=${AVERAGE_VECTOR_PATH} \
+-D log4j.logger.org.apache.hadoop=INFO \
+-i ${INPUT_PATH} \
+-o ${OUTPUT_PATH} \
+-c ${VECTOR_CARDINALITY} \
+-n ${VECTOR_COUNT} \
+"

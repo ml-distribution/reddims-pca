@@ -1,0 +1,34 @@
+#! /bin/bash
+
+BASE_DIR=$(dirname $0)
+HADOOP=$(which hadoop)
+MAVEN=$(which mvn)
+MAHOUT=$(which mahout)
+DEFAULT_HDFS_HOST="hdfs://localhost:54310"
+
+# help
+if [ $# -eq 4 ]
+then
+HDFS_HOST=${DEFAULT_HDFS_HOST}
+INPUT_PATH=$1
+OUTPUT_PATH=$2
+VECTOR_COUNT=$3
+VECTOR_CARDINALITY=$4
+elif [ $# -eq 5 ]
+then
+HDFS_HOST=$1
+INPUT_PATH=$2
+OUTPUT_PATH=$3
+VECTOR_COUNT=$4
+VECTOR_CARDINALITY=$5
+else
+	echo "Usage: $0 [{hdfs-host}] {input (on hdfs)} {output (on hdfs)} {vector-count} {vector-cardinality}"
+	echo "calculates covariace matrix from given IntegerWritable-VectorWritable Sequence File."
+	exit 1
+fi
+
+${BASE_DIR}/vector-mean ${HDFS_HOST} ${INPUT_PATH} ${INPUT_PATH}.mean ${VECTOR_COUNT} ${VECTOR_CARDINALITY}
+${BASE_DIR}/covariance ${HDFS_HOST} ${INPUT_PATH} ${INPUT_PATH}.covar ${INPUT_PATH}.mean/part-r-00000 ${VECTOR_COUNT} ${VECTOR_CARDINALITY}
+$MAHOUT svd -nr ${VECTOR_CARDINALITY} -nc ${VECTOR_CARDINALITY} -r $((VECTOR_CARDINALITY + 1)) -sym true -cl true -i ${INPUT_PATH}.covar/part-r-00000 -o ${OUTPUT_PATH}
+hadoop fs -rmr ${INPUT_PATH}.mean
+hadoop fs -rmr ${INPUT_PATH}.covar
